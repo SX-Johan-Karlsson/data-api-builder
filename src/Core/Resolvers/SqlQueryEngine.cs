@@ -218,7 +218,12 @@ namespace Azure.DataApiBuilder.Core.Resolvers
                 parentMetadata = paginationObjectMetadata;
             }
 
-            PaginationMetadata currentMetadata = parentMetadata.Subqueries[fieldSchema.Name.Value];
+            PaginationMetadata currentMetadata = (PaginationMetadata)metadata;
+            if (parentMetadata.Subqueries.TryGetValue(fieldSchema.Name.Value, out PaginationMetadata? currentObjectMetadata))
+            {
+                currentMetadata = currentObjectMetadata;
+            }
+
             metadata = currentMetadata;
 
             if (currentMetadata.IsPaginated)
