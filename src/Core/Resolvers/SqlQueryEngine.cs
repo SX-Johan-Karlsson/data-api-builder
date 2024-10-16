@@ -249,7 +249,7 @@ namespace Azure.DataApiBuilder.Core.Resolvers
                 parentMetadata = paginationObjectMetadata;
             }
 
-            //
+            // If the key is missing, try to find it in the entire structure
             if (!parentMetadata.Subqueries.ContainsKey(fieldSchema.Name.Value))
             {
                 string[] pathSegments = Regex.Replace(context.Path.ToString(), @"\[\d+\]", "").Split("/");
