@@ -60,6 +60,16 @@ namespace Azure.DataApiBuilder.Core.Resolvers
         /// </summary>
         public JsonElement ResolveObject(JsonElement element, IObjectField fieldSchema, ref IMetadata metadata);
 
+
+        /// <summary>
+        /// Resolves a jsonElement representing an inner object based on the field's schema and metadata
+        /// SX bug fix, see https://github.com/Azure/data-api-builder/issues/2374
+        /// </summary>
+        public JsonElement ResolveObject(JsonElement element, IObjectField fieldSchema, ref IMetadata metadata, IPureResolverContext context)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Resolves a jsonElement representing a list type based on the field's schema and metadata
         /// </summary>

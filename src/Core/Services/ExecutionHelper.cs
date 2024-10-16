@@ -200,7 +200,7 @@ namespace Azure.DataApiBuilder.Service.Services
                 objectValue.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
             {
                 IMetadata metadata = GetMetadataObjectField(context);
-                objectValue = queryEngine.ResolveObject(objectValue, context.Selection.Field, ref metadata);
+                objectValue = queryEngine.ResolveObject(objectValue, context.Selection.Field, ref metadata, context); // SX bug fix, see https://github.com/Azure/data-api-builder/issues/2374
 
                 // Since the query engine could null the object out we need to check again
                 // if it's null.

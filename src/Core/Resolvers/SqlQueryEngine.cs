@@ -4,6 +4,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Azure.DataApiBuilder.Auth;
 using Azure.DataApiBuilder.Config.ObjectModel;
 using Azure.DataApiBuilder.Core.Configurations;
@@ -216,6 +217,53 @@ namespace Azure.DataApiBuilder.Core.Resolvers
             if (parentMetadata.Subqueries.TryGetValue(QueryBuilder.PAGINATION_FIELD_NAME, out PaginationMetadata? paginationObjectMetadata))
             {
                 parentMetadata = paginationObjectMetadata;
+            }
+
+            PaginationMetadata currentMetadata = parentMetadata.Subqueries[fieldSchema.Name.Value];
+            metadata = currentMetadata;
+
+            if (currentMetadata.IsPaginated)
+            {
+                return SqlPaginationUtil.CreatePaginationConnectionFromJsonElement(element, currentMetadata);
+            }
+
+            // In certain cirumstances (e.g. when processing a DW result), the JsonElement will be JsonValueKind.String instead
+            // of JsonValueKind.Object. In this case, we need to parse the JSON. This snippet can be removed when DW result is consistent
+            // with MSSQL result.
+            if (element.ValueKind is JsonValueKind.String)
+            {
+                return JsonDocument.Parse(element.ToString()).RootElement.Clone();
+            }
+
+            return element;
+        }
+
+        /// <summary>
+        /// Resolves a jsonElement representing an inner object based on the field's schema and metadata
+        /// SX bug fix, see https://github.com/Azure/data-api-builder/issues/2374
+        public JsonElement ResolveObject(JsonElement element, IObjectField fieldSchema, ref IMetadata metadata, IPureResolverContext context)
+        {
+            PaginationMetadata parentMetadata = (PaginationMetadata)metadata;
+            if (parentMetadata.Subqueries.TryGetValue(QueryBuilder.PAGINATION_FIELD_NAME, out PaginationMetadata? paginationObjectMetadata))
+            {
+                parentMetadata = paginationObjectMetadata;
+            }
+
+            //
+            if (!parentMetadata.Subqueries.ContainsKey(fieldSchema.Name.Value))
+            {
+                string[] pathSegments = Regex.Replace(context.Path.ToString(), @"\[\d+\]", "").Split("/");
+                PaginationMetadata currentObject = (PaginationMetadata)context.ContextData[$"{pathSegments[1]}_PURE_RESOLVER_CTX::0"]!;
+
+                if (currentObject != null && pathSegments.Length > 2)
+                {
+                    for (int i = 2; i < pathSegments.Length - 1; i++)
+                    {
+                        currentObject = currentObject.Subqueries[pathSegments[i]];
+                    }
+
+                    parentMetadata = currentObject;
+                }
             }
 
             PaginationMetadata currentMetadata = parentMetadata.Subqueries[fieldSchema.Name.Value];
